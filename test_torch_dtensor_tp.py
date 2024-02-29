@@ -29,23 +29,8 @@ class MLPModule(nn.Module):
         self.net1.reset_parameters()
         self.net2.reset_parameters()
 
-mpi_world_size = int(os.environ.get('PMI_SIZE', -1))
-mpi_rank = int(os.environ.get('PMI_RANK', -1))
-if mpi_world_size > 0:
-    os.environ['RANK'] = str(mpi_rank)
-    os.environ['WORLD_SIZE'] = str(mpi_world_size)
-else:
-    # set the default rank and world size to 0 and 1
-    os.environ['RANK'] = str(os.environ.get('RANK', 0))
-    os.environ['WORLD_SIZE'] = str(os.environ.get('WORLD_SIZE', 1))
-os.environ['MASTER_ADDR'] = '127.0.0.1'  # your master address
-os.environ['MASTER_PORT'] = '29500'  # your master port
 
 device_type = "cpu"
-# device_mesh = DeviceMesh(
-#         device_type,
-#         torch.arange(0, NUM_DEVICES),
-#     )
 
 device_mesh = init_device_mesh(device_type, mesh_shape=(2,))
 
@@ -57,14 +42,16 @@ model = MLPModule(device_type)
 print("Original model:", model)
 model_tp = deepcopy(model)
 
-# Shard module and initialize optimizer.
+# Shard module policy
 parallelize_plan = {
     "net1": ColwiseParallel(),
     "net2": RowwiseParallel(),
 }
 model_tp = parallelize_module(model_tp, device_mesh, parallelize_plan)
+
 print("After Tensor Parallel model_tp: ", model_tp)
 
+#inference with BF16
 with torch.inference_mode(), torch.cpu.amp.autocast(enabled=True):
     output = model(inp)
     output_tp = model_tp(inp)
