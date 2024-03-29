@@ -12,6 +12,7 @@ parser.add_argument('--device', '-dev', type=str, default='cpu', help='Device ty
 parser.add_argument('--dist_url', default='127.0.0.1', type=str, help='url used to set up distributed training')
 parser.add_argument('--dist_port', default='29800', type=str, help='url port used to set up distributed training')
 parser.add_argument('--backend', default='gloo', type=str, help='backend used to set up distributed training')
+parser.add_argument('--trace_mode', default=0, type=int, help='0 is for jit  and 1 is for torch.compile')
 args = parser.parse_args()
 
 
@@ -34,7 +35,11 @@ if __name__ == "__main__":
     model = Model().to(device)
 
     input = torch.randn(4, 4).to(device)
-    jit_model = torch.jit.trace(model, input)
-    jit_model = torch.jit.freeze(jit_model)
-    output = jit_model(input)
+    if args.trace_mode == 0:
+        jit_model = torch.jit.trace(model, input)
+        jit_model = torch.jit.freeze(jit_model)
+        output = jit_model(input)
+    else:
+        model_compile = torch.compile(model)
+        output = model_compile(input)
     print(output)
