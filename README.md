@@ -10,5 +10,6 @@ torchrun --nnodes=1 --nproc-per-node=2 test_torch_dtensor_tp.py
 # All-reduce jit trace test case
 ## Help
 - trace_mode 0 for jit 1 for torch.compile
-- TORCH_COMPILE_DEBUG=1
+- TORCH_COMPILE_DEBUG=1 to see the log of torch.compile 
+
 torchrun --nnodes=1 --nproc-per-node=2 test_allreduce_jit_trace.py --trace_mode 0 
